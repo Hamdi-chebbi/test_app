@@ -1,0 +1,65 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "harbor.example.com/myproject/myapp"
+        IMAGE_TAG = "${BUILD_NUMBER}"
+        DOCKER_CREDENTIALS_ID = "Harbor_Jenkins_User"
+        GIT_HELM_REPO_URL = "git@github.com:your-org/helm-chart-repo.git"
+        GIT_CREDENTIALS_ID = "jenkins_ssh_key"
+        HELM_CHART_DIR = "myapp-chart"
+        GIT_BRANCH = "main"  // Change si nécessaire
+    }
+
+    stages {
+        stage('Checkout Application Source') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                }
+            }
+        }
+
+        stage('Push Docker Image to Harbor') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'HARBOR_USER', passwordVariable: 'HARBOR_PASS')]) {
+                    script {
+                        sh """
+                        echo "$HARBOR_PASS" | docker login ${IMAGE_NAME} -u "$HARBOR_USER" --password-stdin
+                        docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                        docker logout ${IMAGE_NAME}
+                        """
+                    }
+                }
+            }
+        }
+
+        stage('Update Helm Chart Version') {
+            steps {
+                dir('helm-chart') {
+                    git branch: "${GIT_BRANCH}",
+                        credentialsId: "${GIT_CREDENTIALS_ID}",
+                        url: "${GIT_HELM_REPO_URL}"
+
+                    script {
+                        sh """
+                        cd ${HELM_CHART_DIR}
+                        sed -i 's/^version: .*/version: ${IMAGE_TAG}/' Chart.yaml
+                        git config user.name "jenkins"
+                        git config user.email "jenkins@yourdomain.com"
+                        git add Chart.yaml
+                        git commit -m "Update chart version to ${IMAGE_TAG}"
+                        git push origin ${GIT_BRANCH}
+                        """
+                    }
+                }
+            }
+        }
+    }
+}

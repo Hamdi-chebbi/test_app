@@ -4,7 +4,7 @@ import config
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'  # Change this to a random secret key
 
-VERSION = "1.0.7"
+VERSION = "1.0.1"
 
 @app.route('/', methods=['GET', 'POST'])
 def login():

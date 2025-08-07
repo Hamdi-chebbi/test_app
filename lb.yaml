@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-ingress-service
+  namespace: infra
+  annotations:
+    loadbalancer.ovhcloud.com/class: "octavia"
+    loadbalancer.ovhcloud.com/flavor: "small"               # Taille du LB : small (par défaut), medium, large, xl
+    loadbalancer.openstack.org/timeout-client-data: "180000"    # Timeout client (en ms)
+    loadbalancer.openstack.org/timeout-member-connect: "20000"  # Timeout connexion vers backend (en ms)
+    loadbalancer.openstack.org/timeout-member-data: "180000"    # Timeout données backend (en ms)
+spec:
+  type: LoadBalancer
+  selector:
+    app: ingress-nginx
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: https
+      port: 443
+      targetPort: 443
+
