@@ -8,26 +8,18 @@ pipeline {
         DOCKER_CREDENTIALS_ID = "Harbor_user"
         GIT_HELM_REPO_URL = "git@github.com:epapyrus/test_app.git"
         GIT_CREDENTIALS_ID = "git_ssh_key"
-
         // HELM_CHART_DIR = "myapp-chart"
-
-
     }
 
     parameters {
         choice(
             name: 'TARGET_BRANCH',
             choices: ['dev', 'test', 'prod'],
-
             description: 'Sélectionner l’environnement cible (dev, test, prod). La branche correspondante sera utilisée.'
-
-
-
         )
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 script {
@@ -43,8 +35,7 @@ pipeline {
                     echo "Checkout de la branche : ${branchToCheckout}"
                 }
             }
-
-
+        }
 
         stage('Get Version') {
             steps {
@@ -59,7 +50,6 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-
             steps {
                 script {
                                         // Construction dynamique du nom de l'image selon la branche
@@ -88,7 +78,6 @@ pipeline {
                 }
             }
         }
-
 
         stage('Update Helm Chart Version') {
             steps {
@@ -129,7 +118,3 @@ pipeline {
         }
     }
 }
-
-
-}
-
