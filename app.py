@@ -1,10 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import config
+import version  # 👈 Import du fichier version.py
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'  # Change this to a random secret key
-
-VERSION = "1.0.7"
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -17,13 +16,13 @@ def login():
             return redirect(url_for('welcome'))
         else:
             error = 'Invalid credentials. Please try again.'
-    return render_template('index.html', error=error, version=VERSION)
+    return render_template('index.html', error=error, version=version.VERSION)
 
 @app.route('/welcome')
 def welcome():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
-    return render_template('welcome.html', version=VERSION)
+    return render_template('welcome.html', version=version.VERSION)
 
 @app.route('/logout')
 def logout():
@@ -31,4 +30,4 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80, debug=True) 
+    app.run(host='0.0.0.0', port=80, debug=True)
