@@ -19,6 +19,7 @@ pipeline {
     //     )
     // }
 
+
 stages {
     stage('Checkout') {
         steps {
@@ -32,6 +33,7 @@ stages {
                     ]]
                 ])
                 echo "Checkout de la branche : ${env.BRANCH_NAME}"
+
             }
         }
     }
