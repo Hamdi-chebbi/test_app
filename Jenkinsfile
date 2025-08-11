@@ -11,13 +11,13 @@ pipeline {
         // HELM_CHART_DIR = "myapp-chart"
     }
 
-    parameters {
-        choice(
-            name: 'TARGET_BRANCH',
-            choices: ['dev', 'test', 'prod'],
-            description: 'Sélectionner l’environnement cible (dev, test, prod). La branche correspondante sera utilisée.'
-        )
-    }
+    // parameters {
+    //     choice(
+    //         name: 'TARGET_BRANCH',
+    //         choices: ['dev', 'test', 'prod'],
+    //         description: 'Sélectionner l’environnement cible (dev, test, prod). La branche correspondante sera utilisée.'
+    //     )
+    // }
 
     stages {
         stage('Checkout') {
@@ -33,8 +33,7 @@ pipeline {
                         ]]
                     ])
                     echo "Checkout de la branche : ${branchToCheckout}"
-                    sh "ls" 
-                    sh "cat env"
+
                 }
             }
         }
