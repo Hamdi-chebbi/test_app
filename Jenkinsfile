@@ -33,6 +33,8 @@ pipeline {
                         ]]
                     ])
                     echo "Checkout de la branche : ${branchToCheckout}"
+                    sh "ls" 
+                    sh "cat env"
                 }
             }
         }
