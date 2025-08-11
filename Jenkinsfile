@@ -107,7 +107,7 @@ pipeline {
                                 git add Chart.yaml
                                 cat Chart.yaml
                                 ls -l
-                                git commit -m "update on ${branchToCheckout} environment to version: ${IMAGE_TAG}" || echo "No changes to commit"
+                                git commit -m "update to version: ${IMAGE_TAG}" || echo "No changes to commit"
                                 git log
                                 git push origin ${branchToCheckout}
                             """
