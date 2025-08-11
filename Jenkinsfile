@@ -37,7 +37,7 @@ pipeline {
                 script {
                     // def version = sh(script: "grep VERSION version.py | sed -E 's/.*\"(.*)\"/\\1/'", returnStdout: true).trim()
                     // echo "La version trouvée est : ${version}"
-                    sh "whoami"
+                    
                     sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
                 }
             }
@@ -88,7 +88,7 @@ pipeline {
                 git add Chart.yaml
                 cat Chart.yaml
                 ls -l
-                git commit -m "minor update on dev environment (version to ${IMAGE_TAG})" || echo "No changes to commit"
+                git commit -m "minor update on dev environment (version: ${IMAGE_TAG})" || echo "No changes to commit"
                 git log
                 git push origin ${GIT_BRANCH}
                 """
