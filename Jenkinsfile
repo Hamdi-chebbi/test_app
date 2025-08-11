@@ -3,21 +3,11 @@ pipeline {
 
     environment {
         REGISTRY_NAME = "https://harbor.infra.crl.aero"
-       // IMAGE_NAME = "harbor.infra.crl.aero/test/app1"
-
         DOCKER_CREDENTIALS_ID = "Harbor_user"
         GIT_HELM_REPO_URL = "git@github.com:epapyrus/test_app.git"
         GIT_CREDENTIALS_ID = "git_ssh_key"
-        // HELM_CHART_DIR = "myapp-chart"
-    }
 
-    // parameters {
-    //     choice(
-    //         name: 'TARGET_BRANCH',
-    //         choices: ['dev', 'test', 'prod'],
-    //         description: 'Sélectionner l’environnement cible (dev, test, prod). La branche correspondante sera utilisée.'
-    //     )
-    // }
+    }
 
 
 stages {
