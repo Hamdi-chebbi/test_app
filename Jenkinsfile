@@ -19,52 +19,62 @@ pipeline {
     //     )
     // }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                script {
-                    def branchToCheckout = params.TARGET_BRANCH == 'prod' ? 'main' : params.TARGET_BRANCH
-                    checkout([
-                        $class: 'GitSCM',
-                        branches: [[name: "*/${branchToCheckout}"]],
-                        userRemoteConfigs: [[
-                            url: 'git@github.com:Hamdi-chebbi/test_app.git',
-                            credentialsId: 'git_ssh_key'  // <- ID de la clé SSH dans Jenkins
-                        ]]
-                    ])
-                    echo "Checkout de la branche : ${branchToCheckout}"
 
-                }
+stages {
+    stage('Checkout') {
+        steps {
+            script {
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "*/${env.BRANCH_NAME}"]],
+                    userRemoteConfigs: [[
+                        url: 'git@github.com:Hamdi-chebbi/test_app.git',
+                        credentialsId: 'git_ssh_key'
+                    ]]
+                ])
+                echo "Checkout de la branche : ${env.BRANCH_NAME}"
+
             }
         }
+    }
 
-        stage('Get Version') {
-            steps {
-                script {
-                    IMAGE_TAG = sh(
-                        script: "grep VERSION version.py | sed -E 's/.*\"(.*)\"/\\1/'",
-                        returnStdout: true
-                    ).trim()
-                    echo "La version trouvée est : ${IMAGE_TAG} sur la branche ${params.TARGET_BRANCH}"
-                }
-            }
-        }
+stage('Get Version') {
+    steps {
+        script {
+            IMAGE_TAG = sh(
+                script: "grep VERSION version.py | sed -E 's/.*\"(.*)\"/\\1/'",
+                returnStdout: true
+            ).trim()
 
-        stage('Build Docker Image') {
-            steps {
-                script {
-                                        // Construction dynamique du nom de l'image selon la branche
-                    def imageName = "harbor.infra.crl.aero/test/${params.TARGET_BRANCH}/${params.TARGET_BRANCH == 'prod' ? '' : ''}app1"
-                    if(params.TARGET_BRANCH == 'prod') {
-                        imageName = "harbor.infra.crl.aero/test/prod/app1"
-                    }
-                    echo "Nom de l'image : ${imageName}:${IMAGE_TAG}"
-                    sh "docker build -t ${imageName}:${IMAGE_TAG} ."
-                    // stocker pour le push
-                    env.IMAGE_NAME = imageName
-                }
-            }
+            echo "📦 Version de l'application : ${IMAGE_TAG}"
+           
         }
+    }
+}
+
+
+stage('Build Docker Image') {
+    steps {
+        script {
+            def branch = env.BRANCH_NAME
+
+            def envName = ''
+            if (branch == 'main') {
+                envName = 'prod'
+            } else if (branch == 'dev' || branch == 'test') {
+                envName = branch
+            } else {
+                // Par défaut, tu peux mettre dev ou autre
+                envName = 'dev'
+            }
+
+            def imageName = "harbor.infra.crl.aero/test/${envName}/app1"
+            echo "Nom de l'image : ${imageName}:${IMAGE_TAG}"
+            sh "docker build -t ${imageName}:${IMAGE_TAG} ."
+            env.IMAGE_NAME = imageName
+        }
+    }
+}
 
         stage('Push Docker Image to Harbor') {
             steps {
@@ -80,42 +90,40 @@ pipeline {
             }
         }
 
-        stage('Update Helm Chart Version') {
-            steps {
-                script {
-                    def branchToCheckout = params.TARGET_BRANCH == 'prod' ? 'main' : params.TARGET_BRANCH
+stage('Update Helm Chart Version') {
+    steps {
+        script {
+            def branchToCheckout = env.BRANCH_NAME
+            sh "git branch"
+            dir('helm-chart') {
+                deleteDir()
 
-                    dir('helm-chart') {
-                        deleteDir()
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: "refs/heads/${branchToCheckout}"]],
+                    userRemoteConfigs: [[
+                        url: "${GIT_HELM_REPO_URL}",
+                        credentialsId: "${GIT_CREDENTIALS_ID}"
+                    ]]
+                ])
 
-                        checkout([
-                            $class: 'GitSCM',
-                            branches: [[name: "refs/heads/${branchToCheckout}"]],
-                            userRemoteConfigs: [[
-                                url: "${GIT_HELM_REPO_URL}",
-                                credentialsId: "${GIT_CREDENTIALS_ID}"
-                            ]]
-                        ])
-
-                        withCredentials([sshUserPrivateKey(credentialsId: "${GIT_CREDENTIALS_ID}", keyFileVariable: 'SSH_KEY')]) {
-                            sh """
-                                eval \$(ssh-agent -s)
-                                ssh-add \$SSH_KEY
-                                git checkout ${branchToCheckout}
-                                yq -y '.appVersion = "${IMAGE_TAG}"' Chart.yaml > Chart.tmp && mv Chart.tmp Chart.yaml
-                                git config user.name "jenkins"
-                                git config user.email "jenkins@yourdomain.com"
-                                git add Chart.yaml
-                                cat Chart.yaml
-                                ls -l
-                                git commit -m "update to version: ${IMAGE_TAG}" || echo "No changes to commit"
-                                git log
-                                git push origin ${branchToCheckout}
-                            """
-                        }
-                    }
+                withCredentials([sshUserPrivateKey(credentialsId: "${GIT_CREDENTIALS_ID}", keyFileVariable: 'SSH_KEY')]) {
+                    sh """
+                        eval \$(ssh-agent -s)
+                        ssh-add \$SSH_KEY
+                        git checkout ${branchToCheckout}
+                        yq -y '.appVersion = "${IMAGE_TAG}"' Chart.yaml > Chart.tmp && mv Chart.tmp Chart.yaml
+                        git config user.name "jenkins"
+                        git config user.email "jenkins@yourdomain.com"
+                        git add Chart.yaml                                              
+                        git commit -m "update to version: ${IMAGE_TAG}" || echo "No changes to commit"
+                        
+                        git push origin ${branchToCheckout}
+                    """
                 }
             }
         }
     }
+}
+}
 }
