@@ -113,8 +113,7 @@ stage('Update Helm Chart Version') {
                         yq -y '.appVersion = "${IMAGE_TAG}"' Chart.yaml > Chart.tmp && mv Chart.tmp Chart.yaml
                         git config user.name "jenkins"
                         git config user.email "jenkins@yourdomain.com"
-                        git add Chart.yaml
-                                              
+                        git add Chart.yaml                                              
                         git commit -m "update to version: ${IMAGE_TAG}" || echo "No changes to commit"
                         
                         git push origin ${branchToCheckout}
